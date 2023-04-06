@@ -3,14 +3,23 @@
 
 import * as React from 'react'
 
-function Greeting({initialName = ''}) {
-  // 🐨 initialize the state to the value from localStorage
-  // 💰 window.localStorage.getItem('name') ?? initialName
-  const [name, setName] = React.useState(initialName)
+const useLocalStorageState = initialName => {
+  const [name, setName] = React.useState(
+    () => window.localStorage.getItem('name') ?? initialName,
+    // changing -- window.localStorage.getItem('name') ?? initialName -- by
+    // -- () => window.localStorage.getItem('name') ?? initialName -- is to do it only once on initial render
+    // this is called lazy initiation
+  )
 
-  // 🐨 Here's where you'll use `React.useEffect`.
-  // The callback should set the `name` in localStorage.
-  // 💰 window.localStorage.setItem('name', name)
+  React.useEffect(() => {
+    window.localStorage.setItem('name', name)
+  }, [name]) // Dependency array added to run only when name changes
+
+  return {name, setName}
+}
+
+function Greeting({initialName = ''}) {
+  const {name, setName} = useLocalStorageState(initialName)
 
   function handleChange(event) {
     setName(event.target.value)

@@ -5,7 +5,12 @@ import * as React from 'react'
 
 function Board() {
   // 🐨 squares is the state for this component. Add useState for squares
-  const squares = Array(9).fill(null)
+  // const squares = Array(9).fill(null)
+  const [squares, setSquares] = React.useState(
+    () =>
+      JSON.parse(window.localStorage.getItem('squares')) ?? Array(9).fill(null),
+    // Array(9).fill(null),
+  )
 
   // 🐨 We'll need the following bits of derived state:
   // - nextValue ('X' or 'O')
@@ -20,22 +25,29 @@ function Board() {
     // 🐨 first, if there's already winner or there's already a value at the
     // given square index (like someone clicked a square that's already been
     // clicked), then return early so we don't make any state changes
-    //
+
+    if (calculateWinner(squares) || squares[square]) {
+      return
+    }
+
     // 🦉 It's typically a bad idea to mutate or directly change state in React.
     // Doing so can lead to subtle bugs that can easily slip into production.
     //
     // 🐨 make a copy of the squares array
     // 💰 `[...squares]` will do it!)
+    const copySquares = [...squares]
     //
     // 🐨 set the value of the square that was selected
     // 💰 `squaresCopy[square] = nextValue`
+    copySquares[square] = calculateNextValue(squares)
     //
     // 🐨 set the squares to your copy
+    setSquares(copySquares)
   }
 
   function restart() {
     // 🐨 reset the squares
-    // 💰 `Array(9).fill(null)` will do it!
+    setSquares(Array(9).fill(null))
   }
 
   function renderSquare(i) {
@@ -46,10 +58,21 @@ function Board() {
     )
   }
 
+  //extra 1
+  React.useEffect(() => {
+    window.localStorage.setItem('squares', JSON.stringify(squares))
+  }, [squares])
+
   return (
     <div>
       {/* 🐨 put the status in the div below */}
-      <div className="status">STATUS</div>
+      <div className="status">
+        {calculateStatus(
+          calculateWinner(squares),
+          squares,
+          calculateNextValue(squares),
+        )}
+      </div>
       <div className="board-row">
         {renderSquare(0)}
         {renderSquare(1)}
