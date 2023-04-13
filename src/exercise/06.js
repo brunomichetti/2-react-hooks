@@ -6,10 +6,56 @@ import * as React from 'react'
 // fetchPokemon: the function we call to get the pokemon info
 // PokemonInfoFallback: the thing we show while we're loading the pokemon info
 // PokemonDataView: the stuff we use to display the pokemon info
-import {PokemonForm} from '../pokemon'
+import {
+  PokemonForm,
+  fetchPokemon,
+  PokemonInfoFallback,
+  PokemonDataView,
+} from '../pokemon'
 
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
+  // const [pokemon, setPokemon] = React.useState(null)
+  // const [error, setError] = React.useState(null)
+  const [state, setState] = React.useState({
+    pokemon: null,
+    error: null,
+    status: 'idle',
+  })
+
+  React.useEffect(() => {
+    if (!pokemonName) return
+
+    setState({...state, status: 'pending', error: null, pokemon: null})
+    // With async (option 1)
+    // async function getPokemon(pokeName) {
+    //   const pokemon = await fetchPokemon(pokeName)
+    //   setPokemon(pokemon)
+    //   // do something with the result
+    // }
+    // getPokemon(pokemonName)
+
+    // With then (option 2)
+    fetchPokemon(pokemonName)
+      .then(pokemon =>
+        setState({
+          state,
+          pokemon: pokemon,
+          error: null,
+          status: 'resolved',
+        }),
+      )
+      .catch(error =>
+        setState({
+          state,
+          pokemon: null,
+          error: error,
+          status: 'rejected',
+        }),
+      )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pokemonName])
+
   // 🐨 use React.useEffect where the callback should be called whenever the
   // pokemon name changes.
   // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
@@ -25,8 +71,21 @@ function PokemonInfo({pokemonName}) {
   //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
 
-  // 💣 remove this
-  return 'TODO'
+  return (
+    <>
+      {state.status === 'idle' && <>Submit a pokemon</>}{' '}
+      {state.status === 'pending' && <PokemonInfoFallback name={pokemonName} />}
+      {state.status === 'resolved' && (
+        <PokemonDataView pokemon={state.pokemon} />
+      )}
+      {state.status === 'rejected' && (
+        <div role="alert">
+          There was an error:{' '}
+          <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
+        </div>
+      )}
+    </>
+  )
 }
 
 function App() {
