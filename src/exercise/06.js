@@ -12,6 +12,7 @@ import {
   PokemonInfoFallback,
   PokemonDataView,
 } from '../pokemon'
+import {ErrorBoundary} from 'react-error-boundary'
 
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
@@ -71,6 +72,12 @@ function PokemonInfo({pokemonName}) {
   //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
 
+  // If there is an error, throw the object needed.
+  // In the ErrorFallbackComponent will be mapped as error.
+  if (state.status === 'rejected') {
+    throw state.error
+  }
+
   return (
     <>
       {state.status === 'idle' && <>Submit a pokemon</>}{' '}
@@ -78,15 +85,18 @@ function PokemonInfo({pokemonName}) {
       {state.status === 'resolved' && (
         <PokemonDataView pokemon={state.pokemon} />
       )}
-      {state.status === 'rejected' && (
-        <div role="alert">
-          There was an error:{' '}
-          <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
-        </div>
-      )}
     </>
   )
 }
+
+// Custom component to catch the error with ErrorBoundary
+const ErrorFallbackComponent = ({error, resetErrorBoundary}) => (
+  <div role="alert">
+    Holy shit, there was an error:{' '}
+    <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+    <button onClick={resetErrorBoundary}>Ok</button>
+  </div>
+)
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
@@ -95,12 +105,24 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
+  // Custom function to reset the name when person clicks 'Ok' in the error
+  const handleResetError = () => {
+    setPokemonName('')
+  }
+
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <PokemonInfo pokemonName={pokemonName} />
+        <ErrorBoundary
+          onReset={handleResetError} // The function set here is mapped to resetErrorBoundary in ErrorFallbackComponent
+          FallbackComponent={ErrorFallbackComponent} // Set here the component to manage/show the error
+          resetKeys={[pokemonName]} // Set the arrays of keys that you want to have. If the key change then boundary is reset
+        >
+          {/*This component has to throw the error in the corresponding case, to be captured by ErrorBoundary */}
+          <PokemonInfo pokemonName={pokemonName} />
+        </ErrorBoundary>
       </div>
     </div>
   )
